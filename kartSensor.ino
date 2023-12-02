@@ -41,34 +41,14 @@ String get_RTC()
 	return output;
 }
 
-// Function to read GPS data - runs on Core 1
-void updateGPS(void* parameter)
+String get_GPS()
 {
-	for (;;)
+  String output = "";
+  // RTOS
+	if (xSemaphoreTake(xSemaphore, (TickType_t)10))
 	{
-		if (xSemaphoreTake(xSemaphore, (TickType_t)10))
-		{
-			String line;
-			while (Serial2.available())
-			{
-				char c = Serial2.read();
-				if (c == '\n')
-				{
-					if (line.startsWith("$GNGLL"))
-					{
-						gpsData = line; // Update the global GPS data
-						gpsData += '\n';
-					}
-					line = "";
-				}
-				else
-				{
-					line += c;
-				}
-			}
-			xSemaphoreGive(xSemaphore);
-			delay(1000); // Read every second
-		}
+		output += gpsData + "\n";
+		xSemaphoreGive(xSemaphore);
 	}
 }
 

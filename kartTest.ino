@@ -25,7 +25,8 @@ int TXPin = 17;
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
-Adafruit_BMP280 bmp; // I2C
+// I2C
+Adafruit_BMP280 bmp; 
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 RTC_DS3231 rtc;
 
@@ -33,7 +34,6 @@ RTC_DS3231 rtc;
 HardwareSerial XBee(1); // Using the second hardware serial port for XBee
 int XBee_RX = 4;		// Replace with your XBee RX pin
 int XBee_TX = 2;		// Replace with your XBee TX pin
-
 
 void setup()
 {
@@ -52,18 +52,13 @@ void loop()
 	data += get_BMP280();
 	data += get_BNO055();
 	data += get_RTC();
-	// data += get_GPS();
+	data += get_GPS();
 
-	// RTOS
-	if (xSemaphoreTake(xSemaphore, (TickType_t)10))
-	{
-		data += gpsData + "\n";
-		xSemaphoreGive(xSemaphore);
-	}
 	// Send data over XBee
 	// Xbee.println(data);
-  
+
 	Serial.println(data);
 
+	// todo: change to ms
 	delay(1000); // Wait for a second
 }
