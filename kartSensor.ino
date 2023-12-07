@@ -50,6 +50,7 @@ String get_GPS()
 		output += gpsData + "\n";
 		xSemaphoreGive(xSemaphore);
 	}
+  return output;
 }
 
 // Function to read GPS data - runs on Core 1
@@ -67,10 +68,12 @@ void process_GPS()
 	while (Serial2.available())
 	{
 		char c = Serial2.read();
+    //Serial.print(c);
 		if (c == '\n')
 		{
 			if (line.startsWith("$GNGLL"))
 			{
+        //Serial.print(line);
 				if (xSemaphoreTake(xSemaphore, (TickType_t)10))
 				{
 					gpsData = line; // Critical section

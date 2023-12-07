@@ -12,6 +12,8 @@
 
 String gpsData = "gps: init\n";		 // Global GPS data string
 SemaphoreHandle_t xSemaphore = NULL; // Mutex for synchronization
+
+
 /////
 
 // init
@@ -26,7 +28,7 @@ int TXPin = 17;
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 // I2C
-Adafruit_BMP280 bmp; 
+Adafruit_BMP280 bmp;
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 RTC_DS3231 rtc;
 
@@ -42,23 +44,31 @@ void setup()
 
 	// rtos
 	xSemaphore = xSemaphoreCreateMutex();										// Create a mutex
-	xTaskCreatePinnedToCore(update_GPS, "update_GPS", 10000, NULL, 1, NULL, 1); // Task pinned to core 1
+	xTaskCreatePinnedToCore(update_GPS, "update_GPS", 20000, NULL, 1, NULL, 0); // Task pinned to core 1
 }
 
 void loop()
 {
-	// Gather data
-	String data = "";
-	data += get_BMP280();
-	data += get_BNO055();
-	data += get_RTC();
-	data += get_GPS();
+	static unsigned long lastUpdate = 0;
+	unsigned long currentMillis = millis();
+  static int i = 0;
 
-	// Send data over XBee
-	// Xbee.println(data);
+	// 1 second
+	if (currentMillis - lastUpdate >= 1000)
+	{
+		lastUpdate = currentMillis;
 
-	Serial.println(data);
+		// Gather data
+		String data = "ITER: " + String(i) + "\n";
+    i++;
+		data += "BMP_280\n" + get_BMP280()  + "\n";
+		data += "BNO055\n"  + get_BNO055()  + "\n";
+		data += "RTC\n"     + get_RTC()     + "\n";
+		data += "GPS\n"     + get_GPS()     + "\n";
 
-	// todo: change to ms
-	delay(1000); // Wait for a second
+		// Send data over XBee
+		// XBee.println(data);
+
+		Serial.println(data);
+	}
 }
