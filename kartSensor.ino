@@ -43,22 +43,31 @@ String get_RTC()
 
 String get_GPS()
 {
-  String output = "";
-  // RTOS
+	String output = "";
+	// RTOS
 	if (xSemaphoreTake(xSemaphore, (TickType_t)10))
 	{
 		output += gpsData + "\n";
 		xSemaphoreGive(xSemaphore);
 	}
-  return output;
+	return output;
 }
 
-// Function to read GPS data - runs on Core 1
+// Function to read GPS data - runs on Core 0
 void update_GPS(void* parameter)
 {
 	while (true)
 	{
-		process_GPS();
+		if (Serial2.available() > 0)
+		{
+			process_GPS();
+		}
+
+		// Yield control back to the system
+		vTaskDelay(10 / portTICK_PERIOD_MS); // Adjust delay as needed
+
+		// Optionally, feed the watchdog here if necessary
+		// esp_task_wdt_reset();
 	}
 }
 
@@ -68,12 +77,12 @@ void process_GPS()
 	while (Serial2.available())
 	{
 		char c = Serial2.read();
-    //Serial.print(c);
+		// Serial.print(c);
 		if (c == '\n')
 		{
 			if (line.startsWith("$GNGLL"))
 			{
-        //Serial.print(line);
+				// Serial.print(line);
 				if (xSemaphoreTake(xSemaphore, (TickType_t)10))
 				{
 					gpsData = line; // Critical section
@@ -85,5 +94,8 @@ void process_GPS()
 		}
 		else
 			line += c;
+
+		// Yield control in each iteration
+		vTaskDelay(1 / portTICK_PERIOD_MS);
 	}
 }

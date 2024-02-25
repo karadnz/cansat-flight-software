@@ -5,6 +5,15 @@
 #include <utility/imumaths.h>
 #include <RTClib.h>
 
+//preferences https://randomnerdtutorials.com/esp32-save-data-permanently-preferences/
+#include <Preferences.h>
+Preferences preferences;
+// critic
+// {
+//   packet_count: "your_ssid"
+//   pass: "your_pass"
+// }
+int packet_count;
 //////rtos
 
 #include "freertos/FreeRTOS.h" //freeRTOS items to be used
@@ -22,21 +31,25 @@ bool isBNO055Initialized = false;
 bool isRTCInitialized = false;
 ///
 
-int RXPin = 16; // ESP32 pin connected to M8M TX
-int TXPin = 17;
-
 #define SEALEVELPRESSURE_HPA (1013.25)
+
+// ******** PINS ************
+
+//UBLOX UART
+int RXPin = 16; // ESP32 pin connected to M8M TX //16
+int TXPin = 17; //17
 
 // I2C
 Adafruit_BMP280 bmp;
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 RTC_DS3231 rtc;
 
-// XBee setup
-HardwareSerial XBee(1); // Using the second hardware serial port for XBee
-int XBee_RX = 4;		// Replace with your XBee RX pin
-int XBee_TX = 2;		// Replace with your XBee TX pin
+//XBee UART
+HardwareSerial XBee(1); 
+int XBee_RX = 4;		
+int XBee_TX = 2;
 
+//////////////////////////////////////
 void setup()
 {
 	begin_serials();
@@ -44,14 +57,18 @@ void setup()
 
 	// rtos
 	xSemaphore = xSemaphoreCreateMutex();										// Create a mutex
-	xTaskCreatePinnedToCore(update_GPS, "update_GPS", 20000, NULL, 1, NULL, 0); // Task pinned to core 1
+	xTaskCreatePinnedToCore(update_GPS, "update_GPS", 20000, NULL, 1, NULL, 0); // Task pinned to core 0
+
+
+  preferences.begin("mission_data", false);
+  //packet_count = preferences.getUInt("packet_count", 0);
 }
 
 void loop()
 {
 	static unsigned long lastUpdate = 0;
 	unsigned long currentMillis = millis();
-  static int i = 0;
+  static int i = preferences.getUInt("packet_count", 0);
 
 	// 1 second
 	if (currentMillis - lastUpdate >= 1000)
@@ -70,5 +87,6 @@ void loop()
 		// XBee.println(data);
 
 		Serial.println(data);
+    preferences.putUInt("packet_count", i);
 	}
 }
