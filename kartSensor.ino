@@ -86,6 +86,8 @@ void process_GPS()
 				if (xSemaphoreTake(xSemaphore, (TickType_t)10))
 				{
 					gpsData = line; // Critical section
+          gpsData += " "; //to delete
+          gpsData += packet_count;
 					xSemaphoreGive(xSemaphore);
 				}
 			}
@@ -97,5 +99,23 @@ void process_GPS()
 
 		// Yield control in each iteration
 		vTaskDelay(1 / portTICK_PERIOD_MS);
+	}
+}
+
+void readXBeeTask(void* parameter)
+{
+	while (true)
+	{
+		if (XBee.available() > 0)
+		{
+			// Read incoming data from XBee
+			xbeeData = XBee.readString();
+			// Print data to Serial (or process it as needed)
+			Serial.print("XBee Data: ");
+			Serial.println(xbeeData);
+		}
+
+		// Delay to yield time to other tasks
+		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }
